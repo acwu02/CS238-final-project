@@ -5,7 +5,6 @@ MAP_WIDTH = 20
 MAP_HEIGHT = 20
 
 OPEN_SPACE = "."
-WHITESPACE = "-"
 
 def get_random_number(min_val, max_val):
     return random.randint(min_val, max_val)
@@ -13,9 +12,7 @@ def get_random_number(min_val, max_val):
 class Vertex:
     def __init__(self, id):
         self.id = id
-        self.html = []
         self.tiles = {}
-
 
 class Room(Vertex):
     def __init__(self, id):
@@ -144,22 +141,16 @@ class Map(Graph):
         super().__init__()
         self._height = MAP_HEIGHT
         self._width = MAP_WIDTH
-        self.html = []
         self.tiles = {}
         self.enemies = {}
 
     def generate(self):
         self._generate_rooms()
         self.randomly_add_edges()
-        for i in range(self._height):
-            self.html.append([])
-            for j in range(self._width):
-                self.html[i].append(WHITESPACE)
         for key, room in self.vertices.items():
             self.tiles.update(room.tiles)
             for coords, tile in room.tiles.items():
                 x, y = coords[0], coords[1]
-                self.html[y][x] = tile
         self._generate_paths()
 
     def _is_in_vertices(self, x, y):
@@ -205,7 +196,6 @@ class Map(Graph):
 
     def _generate_path(self, room1, room2):
         start_with_y = random.choice([True, False])
-        print(room1.y_min, room1.y_max)
         p1 = {'x': random.randint(room1.x_min + 1, room1.x_max - 1),
               'y': random.randint(room1.y_min + 1, room1.y_max - 1)}
         p2 = {'x': random.randint(room2.x_min + 1, room2.x_max - 1),
@@ -214,20 +204,10 @@ class Map(Graph):
         while p1['x'] != p2['x']:
             p1['x'] += 1 if p1['x'] < p2['x'] else -1
             path.append([p1['x'], p1['y']])
-
         while p1['y'] != p2['y']:
             p1['y'] += 1 if p1['y'] < p2['y'] else -1
             path.append([p1['x'], p1['y']])
 
-        print(path)
-
-
-        # if start_with_y:
-        #     if not self._change_y(p1, p2, path) or not self._change_x(p1, p2, path):
-        #         self._generate_path(room1, room2)
-        # else:
-        #     if not self._change_x(p1, p2, path) or not self._change_y(p1, p2, path):
-        #         self._generate_path(room1, room2)
         self._draw_path(path)
 
     def _draw_path(self, path):
@@ -235,26 +215,8 @@ class Map(Graph):
             x, y = px
             tile = OPEN_SPACE
             self.tiles[(x, y)] = tile
-            self.html[y][x] = '.'
 
-    # def _change_x(self, p1, p2, path):
-    #     while p1['x'] != p2['x']:
-    #         p1['x'] += 1 if p1['x'] < p2['x'] else -1
-    #         path.append([p1['x'], p1['y']])
-
-
-    # def _change_y(self, p1, p2, path):
-    #     while p1['y'] != p2['y']:
-    #         p1['y'] += 1 if p1['y'] < p2['y'] else -1
-    #         path.append([p1['x'], p1['y']])
-
-    def _check_path(self, path):
-        for i in range(len(path) - 1):
-            x, y = path[i]
-            if self.html[y][x] == '*' and self.html[path[i + 1][1]][path[i + 1][0]] == '*':
-                return False
-        return True
-
+    # TODO fix
     def add_item(self, item):
         random_room = self.get_random_vertex()
         item.x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
@@ -265,54 +227,24 @@ class Map(Graph):
         self.update_tile(item)
         return True
 
-    def _is_valid_item_location(self, item):
-        if not self.is_open_tile(item.x, item.y):
-            return False
-        for tile in item.get_neighbors(self.tiles):
-            if tile.icon == 'd':
-                return False
-        return True
-
-    def _adjacents_are_clear(self, x, y):
-        dirs = [[-1, 0], [1, 0], [0, 1], [0, -1]]
-        for dir in dirs:
-            adj_x, adj_y = x + dir[0], y + dir[1]
-            if self.get_tile(adj_x, adj_y).icon == '.':
-                return True
-        return False
-
     def get_tile(self, x, y):
         tile = self.tiles.get(f'{x},{y}')
         return tile if tile else None
 
     def is_open_tile(self, x, y):
-        return self.get_tile(x, y).icon == '.'
+        return self.get_tile(x, y) == '.'
 
-    def to_html(self):
-        new_map = []
-        for i in range(self._height):
-            new_map.append('')
-            for j in range(self._width):
-                tile = self.get_tile(j, i)
-                new_map[i] += tile.icon if tile else WHITESPACE
-        return new_map
+def plot(tiles):
+    x_coords, y_coords = zip(*tiles.keys())
+    plt.scatter(x_coords, y_coords)
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.show()
 
-map = Map()
-map.generate()
-print(map.tiles)
+def main():
+    map = Map()
+    map.generate()
+    plot(map.tiles)
 
-# Extract x and y coordinates from the dictionary keys
-x_coords, y_coords = zip(*map.tiles.keys())
-
-# # Extract marker styles ('*' or '.')
-# markers = list(map.tiles.values())
-
-# Create a scatter plot of the points with the corresponding markers
-plt.scatter(x_coords, y_coords)
-
-# Label the axes
-plt.xlabel('X Coordinate')
-plt.ylabel('Y Coordinate')
-
-# Show the plot
-plt.show()
+if __name__ == "__main__":
+    main()
