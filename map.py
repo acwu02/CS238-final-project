@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 MAP_WIDTH = 20
 MAP_HEIGHT = 20
 
+ITEM_REWARD_RANGE = [1, 20]
+ENEMY_REWARD_RANGE = [-20, -1]
+
 OPEN_SPACE = "."
+ITEM_SPACE = "^"
+ENEMY_SPACE = "v"
 
 def get_random_number(min_val, max_val):
     return random.randint(min_val, max_val)
@@ -26,8 +31,6 @@ class Room(Vertex):
             'bottomLeft': None,
             'bottomRight': None
         }
-
-        self.coords = []
         self.generate()
 
     def generate(self):
@@ -61,20 +64,20 @@ class Room(Vertex):
         self.y_max = self.corners['bottomLeft']['y']
         for key in self.corners:
             corner = self.corners[key]
-            self.tiles[(corner['x'], corner['y'])] = OPEN_SPACE
+            self.tiles[(corner['x'], corner['y'])] = 0
 
     def _generate_walls(self):
         for i in range(self.x_min, self.x_max):
-            self.tiles[(i, self.y_min)] = OPEN_SPACE
-            self.tiles[(i, self.y_max)] = OPEN_SPACE
+            self.tiles[(i, self.y_min)] = 0
+            self.tiles[(i, self.y_max)] = 0
         for i in range(self.y_min, self.y_max):
-            self.tiles[(self.x_min, i)] = OPEN_SPACE
-            self.tiles[(self.x_max, i)] = OPEN_SPACE
+            self.tiles[(self.x_min, i)] = 0
+            self.tiles[(self.x_max, i)] = 0
 
     def _generate_interior(self):
         for i in range(self.x_min + 1, self.x_max):
             for j in range(self.y_min + 1, self.y_max):
-                self.tiles[(i, j)] = OPEN_SPACE
+                self.tiles[(i, j)] = 0
 
 class Graph:
     def __init__(self):
@@ -143,6 +146,8 @@ class Map(Graph):
         self._width = MAP_WIDTH
         self.tiles = {}
         self.enemies = {}
+        self.num_items = get_random_number(1, 7)
+        self.num_enemies = get_random_number(1, 7)
 
     def generate(self):
         self._generate_rooms()
@@ -152,6 +157,8 @@ class Map(Graph):
             for coords, tile in room.tiles.items():
                 x, y = coords[0], coords[1]
         self._generate_paths()
+        self._add_items()
+        self._add_enemies()
 
     def _is_in_vertices(self, x, y):
         for vertex in self.vertices.values():
@@ -214,25 +221,31 @@ class Map(Graph):
         for px in path:
             x, y = px
             tile = OPEN_SPACE
-            self.tiles[(x, y)] = tile
-
-    # TODO fix
-    def add_item(self, item):
-        random_room = self.get_random_vertex()
-        item.x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
-        item.y = random.randint(random_room.y_min + 1, random_room.y_max - 1)
-        while not self._is_valid_item_location(item):
-            item.x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
-            item.y = random.randint(random_room.y_min + 1, random_room.y_max - 1)
-        self.update_tile(item)
-        return True
+            self.tiles[(x, y)] = 0
 
     def get_tile(self, x, y):
         tile = self.tiles.get(f'{x},{y}')
         return tile if tile else None
 
     def is_open_tile(self, x, y):
-        return self.get_tile(x, y) == '.'
+        return self.get_tile(x, y) == 0
+
+    # TODO fix
+    def add_item(self, item, reward_range):
+        random_room = self.get_random_vertex()
+        x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
+        y = random.randint(random_room.y_min + 1, random_room.y_max - 1)
+        reward = random.randint(*reward_range)
+        self.tiles[(x, y)] = reward
+        return True
+
+    def _add_items(self):
+        for i in range(self.num_items):
+            self.add_item(ITEM_SPACE, ITEM_REWARD_RANGE)
+
+    def _add_enemies(self):
+        for i in range(self.num_enemies):
+            self.add_item(ENEMY_SPACE, ENEMY_REWARD_RANGE)
 
 def plot(tiles):
     x_coords, y_coords = zip(*tiles.keys())
