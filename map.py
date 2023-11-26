@@ -230,8 +230,7 @@ class Map(Graph):
     def is_open_tile(self, x, y):
         return self.get_tile(x, y) == 0
 
-    # TODO fix
-    def add_item(self, item, reward_range):
+    def add_item(self, reward_range):
         random_room = self.get_random_vertex()
         x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
         y = random.randint(random_room.y_min + 1, random_room.y_max - 1)
