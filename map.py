@@ -8,8 +8,8 @@ ITEM_REWARD_RANGE = [1, 20]
 ENEMY_REWARD_RANGE = [-20, -1]
 
 OPEN_SPACE = "."
-ITEM_SPACE = "^"
-ENEMY_SPACE = "v"
+ITEM_MARKER = "^"
+ENEMY_MARKER = "v"
 
 def get_random_number(min_val, max_val):
     return random.randint(min_val, max_val)
@@ -145,7 +145,7 @@ class Map(Graph):
         self._height = MAP_HEIGHT
         self._width = MAP_WIDTH
         self.tiles = {}
-        self.enemies = {}
+        self.markers = {}
         self.num_items = get_random_number(1, 7)
         self.num_enemies = get_random_number(1, 7)
 
@@ -168,7 +168,7 @@ class Map(Graph):
         return False
 
     def _generate_rooms(self):
-        num_of_rooms = random.randint(0, 4) + 5
+        num_of_rooms = random.randint(1, 4)
         for i in range(num_of_rooms):
             room = Room(i)
             counter = 0
@@ -178,6 +178,11 @@ class Map(Graph):
                     return
                 counter += 1
             self.add_vertex(room)
+            self.add_room_spaces(room)
+
+    def add_room_spaces(self, room):
+        for tile in room.tiles:
+            self.markers[tile] = OPEN_SPACE
 
     def _is_allowed_location(self, room1):
         for room2 in self.vertices.values():
@@ -220,7 +225,7 @@ class Map(Graph):
     def _draw_path(self, path):
         for px in path:
             x, y = px
-            tile = OPEN_SPACE
+            self.markers[(x, y)] = OPEN_SPACE
             self.tiles[(x, y)] = 0
 
     def get_tile(self, x, y):
@@ -230,33 +235,39 @@ class Map(Graph):
     def is_open_tile(self, x, y):
         return self.get_tile(x, y) == 0
 
-    def add_item(self, reward_range):
+    def add_item(self, marker, reward_range):
         random_room = self.get_random_vertex()
         x = random.randint(random_room.x_min + 1, random_room.x_max - 1)
         y = random.randint(random_room.y_min + 1, random_room.y_max - 1)
         reward = random.randint(*reward_range)
         self.tiles[(x, y)] = reward
+        self.markers[(x, y)] = marker
         return True
 
     def _add_items(self):
         for i in range(self.num_items):
-            self.add_item(ITEM_SPACE, ITEM_REWARD_RANGE)
+            self.add_item(ITEM_MARKER, ITEM_REWARD_RANGE)
 
     def _add_enemies(self):
         for i in range(self.num_enemies):
-            self.add_item(ENEMY_SPACE, ENEMY_REWARD_RANGE)
+            self.add_item(ENEMY_MARKER, ENEMY_REWARD_RANGE)
 
-def plot(tiles):
-    x_coords, y_coords = zip(*tiles.keys())
-    plt.scatter(x_coords, y_coords)
+def plot(tiles, markers):
+    for coords in tiles.keys():
+        x = coords[0]
+        y = coords[1]
+        print(markers[coords])
+        plt.scatter(x, y, marker=markers[coords], color='blue')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
+    plt.xlim(-1, 20)
+    plt.ylim(-1, 20)
     plt.show()
 
 def main():
     map = Map()
     map.generate()
-    plot(map.tiles)
+    plot(map.tiles, map.markers)
 
 if __name__ == "__main__":
     main()
